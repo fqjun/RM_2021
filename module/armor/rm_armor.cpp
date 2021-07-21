@@ -169,24 +169,26 @@ serial_port::Write_Data RM_ArmorDetector::run_Armor(
   if (find_Light()) {
     if (fitting_Armor()) {
       final_Armor();
-      std::cout << "陀螺判断 = "
-                << top_.run_Top(_src_img,
-                                _receive_data.Receive_Yaw_Angle_Info.yaw_angle,
-                                armor_[0].armor_rect.center) *
-                       10
-                << std::endl;
-      pnp_.run_Solvepnp(_receive_data.bullet_velocity, armor_[0].distinguish,
-                        armor_[0].armor_rect);
-
+      
       if (armor_config_.armor_draw == 1 || light_config_.light_draw == 1 ||
           armor_config_.armor_edit == 1 || light_config_.light_edit == 1) {
         imshow("armor_draw_img", draw_img_);
         draw_img_ = cv::Mat::zeros(_src_img.size(), CV_8UC3);
       }
-      return serial_.gainWriteData(
-          kalman_.use_RM_KF(_receive_data.Receive_Yaw_Angle_Info.yaw_angle,
-                            pnp_.returnYawAngle(), armor_[0].armor_rect.center),
-          pnp_.returnPitchAngle(), pnp_.returnDepth(), armor_.size(), 0);
+      forecast_angle = kalman_.use_RM_KF(_receive_data.Receive_Yaw_Angle_Info.yaw_angle, armor_[0].armor_rect.center);
+      forecast_pixels = tan(forecast_angle) * focal;
+      if (forecast_pixels > 50) {
+        forecast_pixels = 50;
+      }
+      armor_[0].armor_rect.center.x += forecast_pixels;
+      pnp_.run_Solvepnp(_receive_data.bullet_velocity,
+                        armor_[0].distinguish,
+                        armor_[0].armor_rect);
+      return serial_.gainWriteData(pnp_.returnYawAngle(),
+                                   pnp_.returnPitchAngle(),
+                                   pnp_.returnDepth(),
+                                   armor_.size(),
+                                   0);
     }
   }
   if (armor_config_.armor_draw == 1 || light_config_.light_draw == 1 ||
@@ -194,10 +196,11 @@ serial_port::Write_Data RM_ArmorDetector::run_Armor(
     imshow("armor_draw_img", draw_img_);
     draw_img_ = cv::Mat::zeros(_src_img.size(), CV_8UC3);
   }
-  return serial_.gainWriteData(
-      kalman_.use_RM_KF(_receive_data.Receive_Yaw_Angle_Info.yaw_angle,
-                        pnp_.returnYawAngle(), cv::Point(0, 0)),
-      pnp_.returnPitchAngle(), pnp_.returnDepth(), armor_.size(), 0);
+  return serial_.gainWriteData(pnp_.returnYawAngle(),
+                               pnp_.returnPitchAngle(),
+                               pnp_.returnDepth(),
+                               armor_.size(),
+                               0);
 }
 /**
  * @brief 求两点之间的距离

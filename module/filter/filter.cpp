@@ -32,11 +32,11 @@ void RM_kalmanfilter::reset() {
 }
 
 //
-float RM_kalmanfilter::use_RM_KF(float _top, float _yaw_angle,
+float RM_kalmanfilter::use_RM_KF(float _top,
                                  cv::Point _armor_center) {
   if (_armor_center == cv::Point()) {
     top_angle_differ.get_top_times = 0;
-    return _yaw_angle;
+    return 0;
   }
   double armor_vary = std::sqrt((lost_armor_center.x - _armor_center.x) *
                                     (lost_armor_center.x - _armor_center.x) +
@@ -55,7 +55,7 @@ float RM_kalmanfilter::use_RM_KF(float _top, float _yaw_angle,
   if(armor_vary > armor_threshold_max_){
     std::cout<<"---------------------------------------------------------tab armor-------------------------------------------------------" << std::endl;
     top_angle_differ.get_top_times = 0;
-    return _yaw_angle;
+    return 0;
   }
 
   top_angle_differ.top_angle_ = _top;
@@ -65,23 +65,26 @@ float RM_kalmanfilter::use_RM_KF(float _top, float _yaw_angle,
     top_angle_differ.top_angle = _top;
   }
 
-  std::cout << "top: " << _top << std::endl;
-
   top_angle_differ.get_top_times++;  // 自动计数 -> 获得陀螺仪数据的次数
 
   top_angle_differ.differ =
       top_angle_differ.top_angle_ - top_angle_differ.top_angle;
+
+  if (top_angle_differ.last_differ != 0)
+  {
+    if(top_angle_differ.differ > 0.5)
+    {
+      top_angle_differ.differ = top_angle_differ.last_differ;
+    }
+  }
+  top_angle_differ.last_differ = top_angle_differ.differ;
+
   // 这一时刻的陀螺仪数据 更新为 上一时刻的陀螺仪数据
   top_angle_differ.top_angle = top_angle_differ.top_angle_;
 
-  std::cout << "top_angle_differ " << top_angle_differ.differ << std::endl;
-
   cv::Point2f top_differ = cv::Point2f(top_angle_differ.differ * multiple_, 0);
-  // if (top_angle_differ.get_top_times > first_ignore_time_ /* &&
-  //     armor_vary < armor_threshold_max_ */) {
-  //   return _yaw_angle + predict_point(top_differ).x;
-  // } else {
-    return _yaw_angle;  // top_angle_differ->differ
-  // }
+
+  return predict_point(top_differ).x;
+
 }
 }  // namespace kalman

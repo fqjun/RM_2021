@@ -166,13 +166,15 @@ class RM_ArmorDetector {
   bool armor_success = false;
   bool switch_armor = false;  //切换装甲板
 
-  int lost_distance_armor = 0;  //两帧装甲板之间的距离
-  int amplitude = 0;            //幅度
-  int optimal_armor = 0;        //最优装甲板
-  int armor_position = 0;       //装甲板在车的位置
+  int lost_distance_armor = 0;  // 两帧装甲板之间的距离
+  int amplitude = 0;            // 幅度
+  int optimal_armor = 0;        // 最优装甲板
+  int armor_position = 0;       // 装甲板在车的位置
   int armor_direction = 0;      // 1向右 -1 向左
-  int num = 0;                  //运行次数
-
+  int num = 0;                  // 运行次数
+  int forecast_pixels = 0;      // 预测像素点大小
+  float forecast_angle = 0.f;   // 预测角度
+  const int focal = 1780;       // 相机焦距
   //图像
  private:
   cv::Mat gray_trackbar_ = cv::Mat::zeros(1, 300, CV_8UC1);
